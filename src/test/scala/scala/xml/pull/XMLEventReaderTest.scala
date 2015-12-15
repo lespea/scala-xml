@@ -58,4 +58,30 @@ class XMLEventReaderTest {
    while(er.hasNext) er.next()
    er.stop()
  }
+
+  @Test
+  def entityRefTest: Unit = { // SI-7796
+    val source = Source.fromString("<text>&quot;&apos;&lt;&gt;&amp;</text>")
+    val er = new XMLEventReader(source)
+
+    assertTrue(er.next match {
+      case EvElemStart(_, "text", _, _) => true
+      case _ => false
+    })
+
+    val entities = Seq(
+      EvEntityRef("quot"),
+      EvEntityRef("apos"),
+      EvEntityRef("lt"),
+      EvEntityRef("gt"),
+      EvEntityRef("amp"))
+
+    assertEquals(entities, er.take(entities.size).toSeq)
+
+    assertTrue(er.next match {
+      case EvElemEnd(_, "text") => true
+      case _ => false
+    })
+    assertTrue(er.isEmpty)
+  }
 }
